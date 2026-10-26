@@ -1,0 +1,23 @@
+{
+  "name": "OPTIX Trading Journal",
+  "short_name": "OPTIX",
+  "description": "Offline trading journal with trading-hour reminders.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "categories": [
+    "finance",
+    "productivity"
+  ],
+  "icons": [],
+  "shortcuts": [
+    {
+      "name": "Add Trade",
+      "short_name": "Add Trade",
+      "url": "./?action=addtrade"
+    }
+  ]
+}

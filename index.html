@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="OPTIX">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>OPTIX — Trading Journal</title>
+<link rel="stylesheet" href="styles.css"></head>
+<body>
+<div id="optixIntro" aria-label="OPTIX intro"><main class="oi-scene" id="oiScene"><div class="oi-content" id="oiContent"><div class="oi-line" id="oiJourney"></div><div class="oi-line" id="oiDiscipline"></div><div class="oi-brand-wrap" id="oiBrandWrap"><span id="oiBrand"></span><span class="oi-cursor" id="oiCursor"></span><div class="oi-floor" aria-hidden="true"></div><div class="oi-reflection" id="oiReflection" aria-hidden="true"><span><span class="oi-white">OPTI</span><span class="oi-x">X</span></span></div></div></div></main></div>
+<script src="intro.js"></script>
+
+<div class="app" id="appRoot">
+<aside class="sidebar" id="sidebar" aria-hidden="true"></aside>
+<main class="main">
+<header class="topbar"><div class="page-title" id="pageTitle">Dashboard</div><div class="top-actions">
+<button class="icon-button" title="Export" onclick="exportData()"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M17 8l-5-5-5 5"></path><path d="M12 3v12"></path></svg></button>
+<button class="icon-button" title="Import" onclick="openImportedFilePicker()"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg></button>
+<button class="primary-button icon-only" title="Add Trade" onclick="openTrade()"><svg viewBox="0 0 24 24"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg></button>
+</div></header>
+<input type="file" id="importFile" accept=".json" hidden onchange="importData(event)">
+<input type="file" id="importFilesPicker" accept="*/*" multiple hidden onchange="handleImportedFiles(event)">
+<section class="content">
+
+<div class="view active" id="dashboard">
+<div class="grid kpi-grid">
+<div class="card"><div class="kpi-label">Net P&L</div><div class="kpi-value" id="netPnl">$0.00</div></div>
+<div class="card"><div class="kpi-label">Win Rate</div><div class="kpi-value" id="winRate">0%</div></div>
+<div class="card"><div class="kpi-label">Total Trades</div><div class="kpi-value" id="totalTrades">0</div></div>
+<div class="card"><div class="kpi-label">Profit Factor</div><div class="kpi-value" id="profitFactor">0.00</div></div>
+<div class="card"><div class="kpi-label">Avg. Trade</div><div class="kpi-value" id="avgTrade">$0.00</div></div>
+</div>
+<div class="grid two" style="margin-top:14px">
+<div class="card chart-card"><div class="chart-title"><h2>Equity Curve</h2><span class="eq-month"><button type="button" onclick="eqMonth(-1)" aria-label="Previous month"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M15 5l-7 7 7 7"/></svg></button><b id="eqMonthLabel"></b><button type="button" onclick="eqMonth(1)" aria-label="Next month"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M9 5l7 7-7 7"/></svg></button></span></div><div class="eq-wrap"><div class="eq-main"><div class="equity-scroll" id="equityScroll"><canvas id="equityCanvas"></canvas></div><div class="eq-h" id="eqH"><div class="eq-thumb" id="eqHThumb"></div></div></div><div class="eq-v" id="eqV"><div class="eq-thumb" id="eqVThumb"></div></div></div><div class="equity-tip" id="equityTip"></div></div>
+<div class="card"><div class="chart-title"><h2>Performance</h2></div>
+<div class="stat-row"><span>Winning Trades</span><b class="green" id="wins">0</b></div>
+<div class="stat-row"><span>Winning Trade Amount</span><b class="green" id="winningAmount">$0.00</b></div>
+<div class="stat-row"><span>Losing Trades</span><b class="red" id="losses">0</b></div>
+<div class="stat-row"><span>Losing Trade Amount</span><b class="red" id="losingAmount">$0.00</b></div>
+<div class="stat-row"><span>Missed Trade Amount</span><b class="orange" id="missedAmount">$0.00</b></div>
+<div class="stat-row"><span>No Trade Amount</span><b class="white" id="noTradeAmount">$0.00</b></div><div class="stat-row"><span>Break-even Trade Amount</span><b class="blue" id="breakEvenAmount">$0.00</b></div>
+<div class="stat-row"><span>Best Trade</span><b id="bestTrade">$0.00</b></div>
+<div class="stat-row"><span>Worst Trade</span><b id="worstTrade">$0.00</b></div>
+<div class="stat-row"><span>Average Win</span><b class="green" id="avgWin">$0.00</b></div>
+<div class="stat-row"><span>Average Loss</span><b class="red" id="avgLoss">$0.00</b></div>
+</div></div>
+<div class="grid two dashboard-donut-row">
+<div class="card dashboard-donut-card"><div class="chart-title"><h2>Win / Loss Donut</h2><span>Saved trade distribution</span></div><div class="dashboard-donut-layout"><div class="dashboard-donut" id="dashboardDonut"><div class="dashboard-donut-center"><b id="dashboardDonutTotal">0</b><small>TRADES</small></div></div><div class="dashboard-donut-legend"><div><b class="green" id="dashboardWinCount">0</b> Winning</div><div><b class="red" id="dashboardLossCount">0</b> Losing</div><div><b class="blue" id="dashboardBeCount">0</b> Break-even</div><div><b class="orange" id="dashboardMissedCount">0</b> Missed Trade</div><div><b class="white" id="dashboardNoTradeCount">0</b> No Trade</div></div></div></div>
+<div class="card"><div class="chart-title"><h2>Weekly Analysis</h2><span>Current week</span></div><div class="weekly-grid" id="dashboardWeekly"></div></div>
+</div>
+<div class="section-head"><h2>Recent Trades</h2><button class="btn" onclick="showView('journal')">View all</button></div>
+<div class="table-wrap"><table><thead><tr><th>Date</th><th>Symbol</th><th>Direction</th><th>Setup</th><th>Entry</th><th>Exit</th><th>R:R</th><th>P&L</th><th>Rating</th></tr></thead><tbody id="recentTrades"></tbody></table></div>
+</div>
+
+<div class="view" id="journal">
+<div class="eq-month journal-month"><button type="button" onclick="eqMonth(-1)" aria-label="Previous month"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M15 5l-7 7 7 7"/></svg></button><b data-month-label></b><button type="button" onclick="eqMonth(1)" aria-label="Next month"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M9 5l7 7-7 7"/></svg></button></div>
+<div class="section-head" style="margin-top:0"><div><h2>Trade Journal</h2><p>Record and review every trade.</p></div><button class="primary-button" onclick="openTrade()"><svg viewBox="0 0 24 24" style="width:16px"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg><span>Add Trade</span></button></div>
+<div class="filter-row"><input class="search" id="searchTrade" placeholder="Search symbol, setup..." oninput="renderJournal()"><div class="custom-select" style="width:150px" onclick="openChoice('resultFilter')"><span id="resultFilterLabel">All results</span><span class="custom-select-arrow"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 9l7 7 7-7"/></svg></span></div><div class="custom-select" style="width:160px" onclick="openChoice('directionFilter')"><span id="directionFilterLabel">All directions</span><span class="custom-select-arrow"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 9l7 7 7-7"/></svg></span></div></div>
+<div class="table-wrap"><table><thead><tr><th>Date</th><th>Symbol</th><th>Direction</th><th>Setup</th><th>Entry</th><th>Exit</th><th>Qty</th><th>R:R</th><th>P&L</th><th>Rating</th><th>Action</th></tr></thead><tbody id="journalTable"></tbody></table></div>
+</div>
+
+<div class="view" id="calendar">
+<div class="month-head"><button class="icon-button" onclick="changeMonth(-1)"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 5l-7 7 7 7"/></svg></button><div style="display:flex;align-items:center;gap:10px"><h2 id="monthTitle"></h2><button class="period-select" id="calendarPeriod" type="button" onclick="openCalendarMode()">This month</button></div><button class="icon-button" onclick="changeMonth(1)"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 5l7 7-7 7"/></svg></button></div>
+<div class="period-note" id="calendarPeriodNote"></div>
+<div class="calendar-summary" id="calendarSummary"></div>
+<div id="calendarPeriodContent"></div>
+</div>
+
+<div class="view" id="alarm">
+<div class="section-head" style="margin-top:0"><div><h2>Alarm</h2><p>Your trading days, time and period.</p></div></div>
+<div id="alarmBody"></div>
+</div>
+<div class="view" id="analytics">
+<div class="section-head" style="margin-top:0"><h2>Analytics</h2><button class="btn" onclick="openChecklistManager()">To-Do List Settings</button></div>
+<div class="grid four">
+<div class="card"><div class="kpi-label">Expectancy</div><div class="kpi-value" id="expectancy">$0.00</div></div>
+<div class="card"><div class="kpi-label">Avg Risk:Reward</div><div class="kpi-value" id="avgRR">1:0.0</div></div>
+<div class="card"><div class="kpi-label">Largest Win</div><div class="kpi-value green" id="largestWin">$0.00</div></div>
+<div class="card"><div class="kpi-label">Largest Loss</div><div class="kpi-value red" id="largestLoss">$0.00</div></div>
+</div>
+<div class="grid two" style="margin-top:14px">
+<div class="card">
+<div class="chart-title"><h2>Account Balance</h2></div>
+<div class="field" style="margin-bottom:10px"><label>Starting Account Balance ($)</label><input type="number" step="any" id="accountBalanceInput" placeholder="1000"></div>
+<button class="btn" onclick="saveAccountBalance()">Save Balance</button>
+<div class="stat-row" style="margin-top:12px"><span>Current Balance</span><b id="currentBalance">$0.00</b></div>
+<div class="stat-row"><span>Net P&L</span><b id="balancePnl">$0.00</b></div>
+<div class="stat-row"><span>1% Remaining Balance Alert Level</span><b id="riskThreshold">$0.00</b></div>
+</div>
+<div class="card"><div class="chart-title"><h2>Long vs Short</h2></div><div class="stat-row"><span>Long P&L</span><b id="longPnl">$0.00</b></div><div class="stat-row"><span>Short P&L</span><b id="shortPnl">$0.00</b></div><div style="margin-top:18px"><div class="muted" style="font-size:10px;margin-bottom:7px">Long trade ratio</div><div style="height:8px;background:var(--panel2);border-radius:20px;overflow:hidden"><div id="longBar" style="height:100%;width:0%;background:var(--green);border-radius:20px"></div></div></div></div>
+</div>
+<div class="grid two" style="margin-top:14px"><div class="card"><div class="chart-title"><h2>Setup Performance</h2></div><div id="setupStats"></div></div></div>
+<div class="card" style="margin-top:14px"><div class="chart-title"><h2>Weekly Analysis</h2><span>Current calendar week</span></div><div class="weekly-grid" id="weeklyAnalysis"></div></div>
+</div>
+
+<div class="view" id="imported">
+<div class="section-head" style="margin-top:0"><div><h2>Imported Files</h2><p>Images, videos, audio, PDFs and other files saved offline on this device.</p></div><button class="primary-button" onclick="openImportedFilePicker()"><span style="display:flex;align-items:center;gap:7px"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M5 20h14"/></svg> Import File</span></button></div>
+<div id="importedFilesList" class="imported-file-grid"></div>
+</div>
+
+<div class="view" id="calculator">
+<div class="section-head" style="margin-top:0"><div><h2>Trading Calculator</h2><p>Quick offline calculations for your trading journal.</p></div></div>
+<div class="calculator-grid">
+<button class="calc-tool active" data-calc="winrate" onclick="selectCalc('winrate')"><h3>Win Rate</h3><p>Calculate winning percentage.</p></button>
+<button class="calc-tool" data-calc="rr" onclick="selectCalc('rr')"><h3>Risk / Reward</h3><p>Calculate R:R from entry, stop and target.</p></button>
+<button class="calc-tool" data-calc="risk" onclick="selectCalc('risk')"><h3>Risk Calculator</h3><p>Calculate risk amount and position size.</p></button>
+<button class="calc-tool" data-calc="average" onclick="selectCalc('average')"><h3>Average</h3><p>Calculate an average from your values.</p></button>
+<button class="calc-tool" data-calc="pnl" onclick="selectCalc('pnl')"><h3>Profit / Loss</h3><p>Calculate trade P/L from entry, exit and size.</p></button>
+<button class="calc-tool" data-calc="expectancy" onclick="selectCalc('expectancy')"><h3>Expectancy</h3><p>Estimate average expected P/L per trade.</p></button>
+</div>
+<div class="card calc-form" id="calculatorForm"></div>
+</div>
+
+<div class="view" id="notes">
+<div class="section-head" style="margin-top:0"><div><h2>Trading Notes</h2><p>Keep your ideas, lessons and plans offline.</p></div><button class="primary-button add-note-btn" title="Add notice" onclick="openNote()"><svg viewBox="0 0 24 24" width="14" height="14"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg><span>Add notice</span></button></div>
+<div id="notesList"></div>
+</div>
+
+<div class="view" id="tools">
+<div class="section-head" style="margin-top:0"><div><h2>Tools</h2><p>Trading tools and offline utilities.</p></div></div>
+<div class="tools-list">
+<button class="tool-menu-item" onclick="showView('analytics')"><span class="tool-menu-icon ai ai-purple"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></span><span><b>Analytics</b><small>Full trading performance analytics</small></span><span class="tool-arrow"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 5l7 7-7 7"/></svg></span></button>
+<button class="tool-menu-item" onclick="showView('calculator')"><span class="tool-menu-icon ai ai-orange"><svg viewBox="0 0 24 24" width="20" height="20"><rect x="5" y="2" width="14" height="20" rx="3"/><rect x="8" y="5" width="8" height="4" rx="1"/><path d="M8 13h.01M12 13h.01M16 13h.01M8 17h.01M12 17h.01M16 17h.01" style="stroke-width:2.6"/></svg></span><span><b>Calculator</b><small>Trading calculations and risk tools</small></span><span class="tool-arrow"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 5l7 7-7 7"/></svg></span></button>
+<button class="tool-menu-item" onclick="showView('notes')"><span class="tool-menu-icon ai ai-amber"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h5"/></svg></span><span><b>Notes</b><small>Save and review trading notes</small></span><span class="tool-arrow"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 5l7 7-7 7"/></svg></span></button>
+<button class="tool-menu-item" onclick="showView('alarm')"><span class="tool-menu-icon ai ai-red"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2"/><path d="M5 3L2 6M19 3l3 3"/></svg></span><span><b>Alarm</b><small>Trading days, time and alerts</small></span><span class="tool-arrow"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 5l7 7-7 7"/></svg></span></button>
+<button class="tool-menu-item" onclick="showView('imported')"><span class="tool-menu-icon ai ai-blue"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span><b>Imported Files</b><small>Images, videos, audio, PDFs and files</small></span><span class="tool-arrow"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 5l7 7-7 7"/></svg></span></button>
+</div>
+</div>
+
+<div class="view" id="settings">
+<div class="section-head" style="margin-top:0"><h2>Settings</h2></div>
+<div class="card">
+<div class="setting-item"><div class="setting-left"><h3>Theme</h3><p>Choose dark or light appearance.</p></div><div class="segment"><button id="darkThemeBtn" onclick="setTheme('dark')">Dark</button><button id="lightThemeBtn" onclick="setTheme('light')">Light</button></div></div>
+<div class="setting-item" style="align-items:flex-start"><div class="setting-left"><h3>Keyboard shortcuts</h3><div class="shortcut-list"><kbd>N</kbd><span>New trade</span><kbd>Ctrl + D</kbd><span>Desktop mode</span><kbd>Ctrl + M</kbd><span>Mobile mode</span><kbd>Esc</kbd><span>Close window or video</span><kbd>1 - 5</kbd><span>Dashboard, Journal, Calendar, Tools, Settings</span><kbd>E</kbd><span>Export</span><kbd>I</kbd><span>Import files</span><kbd>Enter</kbd><span>Next field in a trade form (desktop mode)</span></div></div></div>
+<div class="setting-item"><div class="setting-left"><h3>Notifications</h3><p>Trading-time reminders on your phone or computer.</p></div><button type="button" id="notifSwitchSettings" class="switch" role="switch" aria-checked="false" aria-label="Notifications" onclick="notifToggle()"></button></div>
+<div class="setting-item"><div class="setting-left"><h3>Display Mode</h3><p>Mobile mode is the normal phone layout. Desktop mode shows the wide layout with the side navigation.</p></div><div class="mode-toggle"><span>Mobile</span><button type="button" id="modeSwitch" class="switch" role="switch" aria-checked="false" aria-label="Desktop mode" onclick="toggleDesktopMode()"></button><span>Desktop</span></div></div>
+<div class="setting-item"><div class="setting-left"><h3>Content Size</h3><p>Use the minus / plus buttons to make the inner dashboard content smaller or larger without resizing the outer OPTIX frame.</p></div><div class="zoom-control"><button class="icon-button" onclick="changeZoom(-.05)"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 12h14"/></svg></button><div class="zoom-value" id="zoomValue">100%</div><button class="icon-button" onclick="changeZoom(.05)"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 5v14M5 12h14"/></svg></button></div></div>
+
+<div class="setting-item"><div class="setting-left"><h3>Storage</h3><p>All trades are stored locally on this device.</p></div><b class="green">OFFLINE</b></div>
+<div class="setting-item"><div class="setting-left"><h3>Auto Save</h3><p>Changes are automatically saved.</p></div><b class="green">ON</b></div>
+<div class="setting-item"><div class="setting-left"><h3>Local Data</h3><p id="storageCount">0 trades / 0 notes</p></div><div style="display:flex;gap:7px;flex-wrap:wrap"><button class="btn" onclick="openExportPopup()">Export Journal</button><button class="btn" onclick="backupExportData()">Backup</button><button class="btn" onclick="openImportedFilePicker()">Import File</button><button class="btn" onclick="document.getElementById('importFile').click()">Import Backup</button><button class="btn danger" onclick="clearAllData()">Delete All</button></div></div>
+<div class="setting-item"><div class="setting-left"><h3>Reset</h3><p>Clear alarms and notification settings back to zero.</p></div><button class="icon-button" type="button" title="Reset" aria-label="Reset" onclick="resetAlarmSettings()"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button></div>
+</div>
+</div>
+</section>
+</main>
+<nav class="bottom-nav" aria-label="Primary navigation"><div class="nav-container"><div class="glass-dock" id="glassDock"><div class="liquid-indicator" id="navIndicator"></div><button class="mobile-nav-btn nav-item" data-view="calendar" data-index="0" type="button"><svg viewBox="0 0 24 24" width="20" height="20" style="stroke-width:1.8"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="nav-label">Calendar</span></button><button class="mobile-nav-btn nav-item" data-view="journal" data-index="1" type="button"><svg viewBox="0 0 24 24" width="20" height="20" style="stroke-width:1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="14" y2="11"/></svg><span class="nav-label">Journal</span></button><button class="mobile-nav-btn nav-item active" data-view="dashboard" data-index="2" type="button"><svg viewBox="0 0 24 24" width="20" height="20" style="stroke-width:1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="nav-label">Home</span></button><button class="mobile-nav-btn nav-item" data-view="tools" data-index="3" type="button"><svg viewBox="0 0 24 24" width="20" height="20" style="stroke-width:1.8"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg><span class="nav-label">Tools</span></button><button class="mobile-nav-btn nav-item" data-view="settings" data-index="4" type="button"><svg viewBox="0 0 24 24" width="20" height="20" style="stroke-width:1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="nav-label">Settings</span></button></div></div></nav>
+</div>
+
+<div class="overlay" id="alarmFlowOverlay"><div class="modal" id="alarmFlowModal"></div></div>
+<div class="overlay" id="tradeOverlay"><div class="modal wide">
+<div class="modal-head"><h2 id="tradeModalTitle">Add Trade</h2><button class="close-button" onclick="closeOverlay('tradeOverlay')"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+<form id="tradeForm" onsubmit="saveTrade(event)">
+<input type="hidden" id="tradeId">
+<div class="form-grid">
+<div class="field"><label>Date</label><input type="date" id="tradeDate" required></div>
+<div class="field"><label>Symbol</label><input id="symbol" placeholder="EURUSD / NQ / BTCUSD" required></div>
+<div class="field"><label>Direction</label><div class="custom-select" onclick="openChoice('tradeDirection')"><span id="tradeDirectionLabel">Long</span><span class="custom-select-arrow"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 9l7 7 7-7"/></svg></span></div></div>
+<div class="field"><label>Setup / Strategy</label><input id="setup" placeholder="Liquidity sweep, BOS, FVG..."></div>
+<div class="field"><label>Strategy</label><div class="custom-select" onclick="openChoice('tradeStrategy')"><span id="tradeStrategyLabel">No Strategy</span><span class="custom-select-arrow"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 9l7 7 7-7"/></svg></span></div></div>
+<div class="field"><label>Entry Price</label><input type="number" step="any" id="entry" placeholder="0"></div>
+<div class="field"><label>Stop Loss</label><input type="number" step="any" id="stopLoss" placeholder="0"></div>
+<div class="field"><label>Take Profit</label><input type="number" step="any" id="takeProfit" placeholder="0"></div>
+<div class="field"><label>Exit Price</label><input type="number" step="any" id="exit" placeholder="0"></div>
+<div class="field"><label>Quantity / Size</label><input type="number" step="any" id="quantity" value="1"></div>
+<div class="field"><label>Risk to Reward Ratio (R:R)</label><input type="number" step="any" id="rrRatio" placeholder="e.g. 2.5"></div>
+<div class="field"><label>P&L ($)</label><input type="number" step="any" id="pnl" placeholder="100 or -50" required></div>
+<div class="field"><label>Session</label><div class="custom-select" onclick="openChoice('tradeSession')"><span id="tradeSessionLabel">London</span><span class="custom-select-arrow"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 9l7 7 7-7"/></svg></span></div></div>
+<div class="field"><label>Emotion</label><div class="custom-select" onclick="openChoice('tradeEmotion')"><span id="tradeEmotionLabel">😌 Calm</span><span class="custom-select-arrow"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 9l7 7 7-7"/></svg></span></div></div>
+<div class="trade-checklist" id="tradeChecklist" style="display:none"><div class="trade-checklist-title" id="tradeChecklistTitle"></div><div class="check-progress"><div class="check-progress-head"><span id="checkProgressText">0%</span><span class="check-progress-done" id="checkProgressDone"><svg viewBox="0 0 24 24" width="14" height="14" style="stroke-width:3"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span></div><div class="check-progress-track"><div class="check-progress-fill" id="checkProgressFill"></div></div></div><div id="tradeChecklistItems"></div></div><div class="field full"><label>Trade Notes</label><textarea id="tradeNotes" placeholder="Why did you take this trade? What happened?"></textarea></div>
+<div class="field full">
+<label>Trade Images — up to 3</label>
+<div class="image-upload">
+<div class="upload-icon"><span class="ai ai-green big"><svg viewBox="0 0 24 24" width="26" height="26"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg></span></div>
+<div class="upload-text">Choose up to 3 JPEG, PNG or WEBP images from your files.</div>
+<button type="button" class="browse-button" onclick="document.getElementById('tradeImages').click()">Browse Files</button>
+<input type="file" id="tradeImages" accept="*/*" multiple hidden onchange="handleTradeImages(event)">
+<div class="image-grid" id="tradeImagePreview"></div>
+</div>
+</div>
+</div>
+<div class="field full">
+<label>Trade Video — up to 2</label>
+<div class="video-upload">
+<div class="upload-icon"><span class="ai ai-red big"><svg viewBox="0 0 24 24" width="26" height="26"><rect x="2" y="5" width="14" height="14" rx="3"/><path d="M16 10l6-3v10l-6-3z"/></svg></span></div>
+<div class="upload-text">Choose up to 2 MP4, WEBM or MOV videos from your files.</div>
+<button type="button" class="browse-button" onclick="document.getElementById('tradeVideos').click()">Browse Videos</button>
+<input type="file" id="tradeVideos" accept="*/*" multiple hidden onchange="handleTradeVideos(event)">
+<div class="media-grid" id="tradeVideoPreview"></div>
+<div id="videoImportStatus"></div>
+</div>
+</div>
+<div class="modal-actions"><button type="button" class="btn" onclick="closeOverlay('tradeOverlay')">Cancel</button><button type="submit" class="save-icon-button" title="Save Trade"><svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"></path><path d="M8 4v6h8V4"></path><path d="M8 20v-6h8v6"></path></svg></button></div>
+</form></div></div>
+
+<div class="overlay" id="imagePreviewOverlay"><div class="modal wide"><div class="modal-head"><h2 id="imagePreviewTitle">Image Preview</h2><button class="close-button" onclick="closeOverlay('imagePreviewOverlay')"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div id="imagePreviewContent"></div></div></div>
+
+<div class="overlay video-player-overlay" id="videoPlayerOverlay"><div class="video-player-modal">
+<div class="video-titlebar"><span id="videoPlayerTitle">Trade Video</span><button class="close-button" onclick="closeVideoPlayer()"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+<div class="video-player-wrap" id="videoPlayerWrap">
+<video id="tradeVideoPlayer" preload="metadata" playsinline></video>
+<div class="video-controls" id="videoControls">
+<button class="video-control-btn" id="videoPlayBtn" type="button"><svg viewBox="0 0 24 24" width="18" height="18" style="fill:currentColor;stroke:none"><path d="M7 4l13 8-13 8z"/></svg></button>
+<button class="video-control-btn" id="videoBackBtn" type="button">−10</button>
+<button class="video-control-btn" id="videoForwardBtn" type="button">+10</button>
+<input class="video-seek" id="videoSeek" type="range" min="0" max="100" value="0" step="0.1">
+<span class="video-time" id="videoTime">0:00 / 0:00</span>
+<button class="video-control-btn video-download" id="videoDownloadBtn" type="button"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 4v12"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></button>
+</div></div></div></div>
+
+<div class="overlay" id="calendarModeOverlay"><div class="modal"><div class="modal-head"><h2>Calendar View</h2><button class="close-button" onclick="closeOverlay('calendarModeOverlay')"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="period-note" style="margin:0 0 12px">Choose the calendar period.</div><div id="calendarModeChoices" style="display:grid;gap:9px"></div></div></div>
+
+<div class="overlay" id="weeklyDetailOverlay"><div class="modal"><div class="modal-head"><h2 id="weeklyDetailTitle">Weekly Result</h2><button class="close-button" onclick="closeOverlay('weeklyDetailOverlay')"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div id="weeklyDetailContent"></div><div class="modal-actions"><button class="btn" onclick="closeOverlay('weeklyDetailOverlay')">Close</button></div></div></div>
+
+<div class="overlay" id="noteOverlay"><div class="modal">
+<div class="modal-head"><h2>New Note</h2><button class="close-button" onclick="closeOverlay('noteOverlay')"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+<div class="form-grid"><div class="field full"><label>Title</label><input id="noteTitle" placeholder="Today's lesson"></div><div class="field full"><label>Note</label><textarea id="noteText" style="min-height:220px" placeholder="Write your trading journal..."></textarea></div></div>
+<div class="modal-actions"><button class="btn" onclick="closeOverlay('noteOverlay')">Cancel</button><button class="save-icon-button" title="Save Note" onclick="saveNote()"><svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"></path><path d="M8 4v6h8V4"></path><path d="M8 20v-6h8v6"></path></svg></button></div>
+</div></div>
+
+<div class="overlay" id="tradeDetailOverlay"><div class="modal wide">
+<div class="modal-head"><h2>Trade Details</h2><div class="head-actions"><button class="close-button" id="tradeDetailEditBtn" title="Edit trade" aria-label="Edit trade" onclick="closeOverlay('tradeDetailOverlay');openTrade(window.__detailTradeId)"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button><button class="close-button" onclick="closeOverlay('tradeDetailOverlay')" aria-label="Close"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div></div>
+<div id="tradeDetailContent"></div>
+<div class="modal-actions"><button class="btn" onclick="closeOverlay('tradeDetailOverlay')">Close</button></div>
+</div></div>
+
+<div class="overlay" id="dayTradesOverlay"><div class="modal">
+<div class="modal-head"><h2 id="dayTradesTitle">Trades</h2><button class="close-button" onclick="closeOverlay('dayTradesOverlay')"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+<div id="dayTradesList"></div>
+</div></div>
+
+<div class="overlay" id="noteDetailOverlay"><div class="modal">
+<div class="modal-head"><h2>Note Details</h2><button class="close-button" onclick="closeOverlay('noteDetailOverlay')"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+<div id="noteDetailContent"></div>
+<div class="modal-actions"><button class="btn" onclick="closeOverlay('noteDetailOverlay')">Close</button></div>
+</div></div>
+
+<div class="overlay" id="strategyOverlay"><div class="modal wide">
+<div class="modal-head"><h2>To-Do List Settings</h2><button class="close-button" onclick="closeOverlay('strategyOverlay')"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+<div class="field"><label>Add To-Do List</label><input id="newStrategyInput" placeholder="Your to-do list strategy"></div>
+<div class="modal-actions"><button class="btn" onclick="closeOverlay('strategyOverlay')">Close</button><button class="btn" onclick="addStrategy()">Add To-Do List</button></div>
+<div id="strategyManagerList" class="strategy-list"></div>
+</div></div>
+<div class="overlay" id="checklistOverlay"><div class="modal wide">
+<div class="modal-head"><h2 id="checklistTitle">To-Do List Checklist</h2><button class="close-button" onclick="closeOverlay('checklistOverlay')"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+<div class="field"><label>Add checklist item</label><input id="checkItemInput" placeholder="e.g. Check 50-minute time frame"></div>
+<div class="modal-actions"><button class="btn" onclick="closeOverlay('checklistOverlay')">Close</button><button class="btn" onclick="addChecklistItem()">Add Task</button></div>
+<div id="checklistItems" class="checklist-editor"></div>
+</div></div>
+<div class="choice-overlay" id="choiceOverlay" onclick="closeChoiceOutside(event)"><div class="choice-sheet" id="choiceSheet"><div class="choice-title" id="choiceTitle">Select</div><div id="choiceItems"></div></div></div>
+
+<div class="overlay" id="exportOverlay"><div class="modal">
+<div class="modal-head"><h2>Export Trading Journal</h2><button class="close-button" onclick="closeOverlay('exportOverlay')"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+<div class="period-note" style="margin-bottom:12px">Choose what you want to export as a real PDF.</div>
+<div class="export-choice-grid"><button class="trade-option" onclick="openExportMonths()"><strong>Monthly</strong><small>Export one selected month.</small></button><button class="trade-option" onclick="openExportYears()"><strong>Yearly</strong><small>Export one selected year.</small></button></div>
+</div></div>
+<div class="overlay" id="exportMonthOverlay"><div class="modal">
+<div class="modal-head"><h2 id="exportMonthTitle">Choose Month</h2><button class="close-button" onclick="closeOverlay('exportMonthOverlay')"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div id="exportMonthChoices" class="export-month-grid"></div>
+</div></div>
+<div class="overlay" id="exportYearOverlay"><div class="modal">
+<div class="modal-head"><h2>Choose Year</h2><button class="close-button" onclick="closeOverlay('exportYearOverlay')"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div id="exportYearChoices" class="export-month-grid"></div>
+</div></div>
+<div class="overlay" id="filePreviewOverlay"><div class="modal wide">
+<div class="modal-head"><h2 id="filePreviewTitle">File</h2><button class="close-button" onclick="closeImportedPreview()"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div id="filePreviewContent" class="file-preview-content"></div><div class="modal-actions"><button class="btn" id="filePreviewDownloadBtn" style="display:inline-flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M12 4v12"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg> Download</button><button class="btn" onclick="closeImportedPreview()">Close</button></div>
+</div></div>
+<div class="overlay" id="renameFileOverlay"><div class="modal">
+<div class="modal-head"><h2>Rename File</h2><button class="close-button" onclick="closeOverlay('renameFileOverlay')"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="field"><label>File name</label><input id="renameFileInput" placeholder="OPTIX File 1"></div><div class="modal-actions"><button class="btn" onclick="closeOverlay('renameFileOverlay')">Cancel</button><button class="btn" onclick="saveImportedRename()">Save</button></div>
+</div></div>
+<div class="overlay" id="confirmOverlay"><div class="confirm-box"><div class="confirm-icon">!</div><div class="confirm-title" id="confirmTitle">Confirm</div><div class="confirm-message" id="confirmMessage">Are you sure?</div><div class="confirm-actions"><button onclick="cancelConfirm()">Cancel</button><button class="danger" id="confirmOK">Confirm</button></div></div></div>
+<div class="overlay" id="alertOverlay"><div class="confirm-box"><div class="confirm-icon">!</div><div class="confirm-title" id="alertTitle">Attention</div><div class="confirm-message" id="alertMessage">Please check this message.</div><div class="confirm-actions"><button class="danger" id="alertOK">OK</button></div></div></div>
+<div class="overlay" id="checkCompleteOverlay"><div class="confirm-box"><div class="check-complete-icon"><svg viewBox="0 0 24 24" width="34" height="34" style="stroke-width:3.4"><path d="M5 12.5l4.5 4.5L19 7"/></svg></div><div class="confirm-title">Checklist Complete</div><div class="confirm-message" id="checkCompleteMessage">Checklist completed 100%.</div><div class="confirm-actions"><button class="btn" id="checkCompleteOK">OK</button></div></div></div>
+<div class="overlay" id="noticeOverlay"><div class="confirm-box"><div class="confirm-icon">!</div><div class="confirm-title" id="noticeTitle">Attention</div><div class="confirm-message" id="noticeMessage">Please check this information.</div><div class="confirm-actions"><button class="danger" id="noticeOK">OK</button></div></div></div>
+<div class="toast" id="toast"></div>
+<div class="success-toast" id="successToast"><span class="success-toast-icon"><svg viewBox="0 0 24 24" width="34" height="34" style="stroke-width:3.4"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span><span id="successToastText">Saved successfully.</span></div>
+
+<script src="app.js"></script>
+</body>
+</html>
